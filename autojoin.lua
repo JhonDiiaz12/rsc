@@ -49,46 +49,27 @@ end
 
 -- 🔹 Enviar mensaje al webhook
 local function sendMessage(msg)
-    local req = getRequest()
-    if not req then
-        status.Text = "❌ Tu executor no soporta requests HTTP"
+    local body = game:GetService("HttpService"):JSONEncode({ content = msg })
+
+    local request = http_request or (syn and syn.request)
+    if not request then
+        status.Text = "Executor no soporta request"
         return
     end
 
-    local body = HttpService:JSONEncode({ content = msg })
+    local res = request({
+        Url = webhookUrl,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = body
+    })
 
-    local ok, res = pcall(function()
-        return req({
-            Url = webhookUrl,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = body
-        })
-    end)
-
-    if not ok then
-        status.Text = "Error al enviar ❌"
-        warn("Request error:", res)
-        return
-    end
-
-    if res.StatusCode == 204 then
+    if res and res.StatusCode == 204 then
         status.Text = "Enviado correctamente ✅"
     else
-        status.Text = "Error: " .. tostring(res.StatusCode)
-        warn("Respuesta:", res.StatusCode, res.Body)
+        status.Text = "Error al enviar"
+        warn(res and res.StatusCode, res and res.Body)
     end
 end
-
--- Botón
-sendBtn.MouseButton1Click:Connect(function()
-    local texto = textbox.Text
-    if texto == "" then
-        status.Text = "⚠️ Escribe un mensaje primero"
-        return
-    end
-    status.Text = "⏳ Enviando..."
-    sendMessage(texto)
-end)
