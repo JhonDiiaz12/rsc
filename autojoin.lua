@@ -1,62 +1,81 @@
--- AutoJoiner con GUI que envía datos a un webhook de Discord
 local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
 
--- Reemplaza con tu Webhook
-local webhookUrl = "https://discord.com/api/webhooks/1410719582418895029/0N7OAYVMDhORyBnDu1fVthIqAPtV5DdS3pSomJFf038PDQvicCnGwSzS6Wxz311_dcLT"
+-- Pega aquí la URL completa del webhook que creaste en Discord
+local webhookUrl = "https://discord.com/api/webhooks/TU_WEBHOOK_ID/TU_WEBHOOK_TOKEN"
 
 -- GUI
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 320, 0, 160)
-Frame.Position = UDim2.new(0.5, -160, 0.5, -80)
-Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Frame.Active = true
-Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+local screenGui = Instance.new("ScreenGui", CoreGui)
+screenGui.ResetOnSpawn = false
 
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundTransparency = 1
-Title.Text = "🔗 Enviar a Discord"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 420, 0, 200)
+frame.Position = UDim2.new(0.5, -210, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+frame.BorderSizePixel = 0
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
-local TextBox = Instance.new("TextBox", Frame)
-TextBox.Size = UDim2.new(1, -40, 0, 40)
-TextBox.Position = UDim2.new(0, 20, 0, 50)
-TextBox.PlaceholderText = "Escribe aquí..."
-TextBox.Font = Enum.Font.Gotham
-TextBox.TextSize = 16
-TextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
-TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TextBox.ClearTextOnFocus = false
-Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 8)
+local textbox = Instance.new("TextBox", frame)
+textbox.Size = UDim2.new(1, -40, 0, 60)
+textbox.Position = UDim2.new(0, 20, 0, 25)
+textbox.PlaceholderText = "Escribe tu mensaje aquí..."
+textbox.ClearTextOnFocus = false
+textbox.TextWrapped = true
+textbox.BackgroundColor3 = Color3.fromRGB(240,240,240)
+textbox.TextColor3 = Color3.fromRGB(0,0,0)
+textbox.TextScaled = true
+Instance.new("UICorner", textbox).CornerRadius = UDim.new(0, 8)
 
-local Button = Instance.new("TextButton", Frame)
-Button.Size = UDim2.new(0.5, -30, 0, 35)
-Button.Position = UDim2.new(0.5, -70, 0, 110)
-Button.Text = "Enviar"
-Button.Font = Enum.Font.GothamBold
-Button.TextSize = 16
-Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-Button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 8)
+local sendBtn = Instance.new("TextButton", frame)
+sendBtn.Size = UDim2.new(0.5, -15, 0, 36)
+sendBtn.Position = UDim2.new(0, 20, 0, 110)
+sendBtn.Text = "Enviar"
+sendBtn.Font = Enum.Font.GothamBold
+sendBtn.TextColor3 = Color3.fromRGB(255,255,255)
+sendBtn.BackgroundColor3 = Color3.fromRGB(0,120,255)
+Instance.new("UICorner", sendBtn).CornerRadius = UDim.new(0, 6)
 
-Button.MouseButton1Click:Connect(function()
-    local texto = TextBox.Text
-    if texto ~= "" then
-        local payload = HttpService:JSONEncode({content = "📩 Dato recibido: " .. texto})
-        local success, err = pcall(function()
-            HttpService:PostAsync(webhookUrl, payload, Enum.HttpContentType.ApplicationJson)
-        end)
-        if success then
-            Button.Text = "✅ Enviado"
-            wait(2)
-            Button.Text = "Enviar"
-        else
-            Button.Text = "❌ Error"
-            warn(err)
-        end
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1, -40, 0, 28)
+status.Position = UDim2.new(0, 20, 0, 155)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.fromRGB(220,220,220)
+status.Text = "Estado: esperando..."
+
+-- Función de envío
+local function sendMessage(msg)
+    local body = HttpService:JSONEncode({ content = msg })
+    local ok, res = pcall(function()
+        return HttpService:RequestAsync({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = body
+        })
+    end)
+
+    if not ok then
+        status.Text = "Error al enviar"
+        warn(res)
+        return
     end
+
+    if res.StatusCode == 204 then
+        status.Text = "Enviado correctamente ✅"
+    else
+        status.Text = "Error: " .. res.StatusCode
+        warn("Respuesta:", res.StatusCode, res.Body)
+    end
+end
+
+-- Botón
+sendBtn.MouseButton1Click:Connect(function()
+    local texto = textbox.Text
+    if texto == "" then
+        status.Text = "Escribe un mensaje primero"
+        return
+    end
+    sendMessage(texto)
 end)
