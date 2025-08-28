@@ -2,7 +2,7 @@
 local HttpService = game:GetService("HttpService")
 
 -- Reemplaza con tu Webhook
-local webhookUrl = "https://discord.com/api/webhooks/TU_WEBHOOK_ID/TU_WEBHOOK_TOKEN"
+local webhookUrl = "https://discord.com/api/webhooks/1410719582418895029/0N7OAYVMDhORyBnDu1fVthIqAPtV5DdS3pSomJFf038PDQvicCnGwSzS6Wxz311_dcLT"
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
