@@ -48,19 +48,20 @@ status.Parent = frame
 
 -- Función de envío
 local function sendMessage(msg)
-    local request = http_request or (syn and syn.request)
+    local request = http_request or (syn and syn.request) or request
     if not request then
         status.Text = "❌ Tu executor no soporta requests"
         return
     end
 
-    local data = HttpService:JSONEncode({ ["content"] = msg })
+    local data = HttpService:JSONEncode({ content = msg })
 
     local res = request({
         Url = webhookUrl,
         Method = "POST",
         Headers = {
-            ["Content-Type"] = "application/json"
+            ["Content-Type"] = "application/json",
+            ["Content-Length"] = tostring(#data)
         },
         Body = data
     })
@@ -69,16 +70,6 @@ local function sendMessage(msg)
         status.Text = "✅ Enviado correctamente"
     else
         status.Text = "❌ Error: " .. (res and res.StatusCode or "desconocido")
-        warn(res)
+        print(res and res.Body or "Sin respuesta")
     end
 end
-
--- Botón
-sendBtn.MouseButton1Click:Connect(function()
-    local texto = textbox.Text
-    if texto == "" then
-        status.Text = "⚠️ Escribe un mensaje primero"
-        return
-    end
-    sendMessage(texto)
-end)
