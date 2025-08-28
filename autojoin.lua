@@ -1,77 +1,62 @@
--- AutoJoin con GUI centrada
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+-- AutoJoiner con GUI que envía datos a un webhook de Discord
+local HttpService = game:GetService("HttpService")
 
--- PlaceId del juego (cámbialo al tuyo si es otro)
-local placeId = 109983668079237 
+-- Reemplaza con tu Webhook
+local webhookUrl = "https://discord.com/api/webhooks/TU_WEBHOOK_ID/TU_WEBHOOK_TOKEN"
 
--- Crear GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 320, 0, 160)
+Frame.Position = UDim2.new(0.5, -160, 0.5, -80)
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.Active = true
+Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
--- Frame principal (centrado en pantalla)
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 180)
-frame.Position = UDim2.new(0.5, -175, 0.5, -90) -- 👈 Centrado
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "🔗 Enviar a Discord"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- Bordes redondeados
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = frame
+local TextBox = Instance.new("TextBox", Frame)
+TextBox.Size = UDim2.new(1, -40, 0, 40)
+TextBox.Position = UDim2.new(0, 20, 0, 50)
+TextBox.PlaceholderText = "Escribe aquí..."
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 16
+TextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.ClearTextOnFocus = false
+Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 8)
 
--- Título
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.Text = "🔑 Ingresa el JobId del servidor"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.Parent = frame
+local Button = Instance.new("TextButton", Frame)
+Button.Size = UDim2.new(0.5, -30, 0, 35)
+Button.Position = UDim2.new(0.5, -70, 0, 110)
+Button.Text = "Enviar"
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 16
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 8)
 
--- Caja de texto
-local textbox = Instance.new("TextBox")
-textbox.Size = UDim2.new(0.9, 0, 0, 40)
-textbox.Position = UDim2.new(0.05, 0, 0.45, -20)
-textbox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textbox.Font = Enum.Font.Gotham
-textbox.TextSize = 16
-textbox.PlaceholderText = "Ej: b6e3ecbc-24e3-43c6-84a4-4fe693ab0fb4"
-textbox.Parent = frame
-
-local boxCorner = Instance.new("UICorner")
-boxCorner.CornerRadius = UDim.new(0, 8)
-boxCorner.Parent = textbox
-
--- Botón
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0.5, 0, 0, 35)
-button.Position = UDim2.new(0.25, 0, 0.8, 0)
-button.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-button.Text = "Unirse"
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.GothamBold
-button.TextSize = 18
-button.Parent = frame
-
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 8)
-btnCorner.Parent = button
-
--- Acción al presionar el botón
-button.MouseButton1Click:Connect(function()
-    local jobId = textbox.Text
-    if jobId and jobId ~= "" then
-        frame.Visible = false
-        TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
-    else
-        title.Text = "❌ JobId inválido"
-        title.TextColor3 = Color3.fromRGB(255, 50, 50)
+Button.MouseButton1Click:Connect(function()
+    local texto = TextBox.Text
+    if texto ~= "" then
+        local payload = HttpService:JSONEncode({content = "📩 Dato recibido: " .. texto})
+        local success, err = pcall(function()
+            HttpService:PostAsync(webhookUrl, payload, Enum.HttpContentType.ApplicationJson)
+        end)
+        if success then
+            Button.Text = "✅ Enviado"
+            wait(2)
+            Button.Text = "Enviar"
+        else
+            Button.Text = "❌ Error"
+            warn(err)
+        end
     end
 end)
