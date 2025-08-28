@@ -44,21 +44,24 @@ status.Text = "Estado: esperando..."
 
 -- Función de envío
 local function sendMessage(msg)
-    local body = HttpService:JSONEncode({ content = msg })
+    local json = HttpService:JSONEncode({content = msg})
+
+    local request = (syn and syn.request) or (http and http.request) or http_request
+
     local ok, res = pcall(function()
-        return HttpService:RequestAsync({
+        return request({
             Url = webhookUrl,
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
             },
-            Body = body
+            Body = json
         })
     end)
 
     if not ok then
-        status.Text = "Error al enviar"
-        warn(res)
+        status.Text = "Error al enviar ❌"
+        warn("Request error:", res)
         return
     end
 
@@ -69,13 +72,3 @@ local function sendMessage(msg)
         warn("Respuesta:", res.StatusCode, res.Body)
     end
 end
-
--- Botón
-sendBtn.MouseButton1Click:Connect(function()
-    local texto = textbox.Text
-    if texto == "" then
-        status.Text = "Escribe un mensaje primero"
-        return
-    end
-    sendMessage(texto)
-end)
