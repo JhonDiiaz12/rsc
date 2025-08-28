@@ -1,7 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 
--- 👇 Pon aquí tu webhook de Discord exactamente como sale
+-- 👇 Tu webhook
 local webhookUrl = "https://discord.com/api/webhooks/1410719582418895029/0N7OAYVMDhORyBnDu1fVthIqAPtV5DdS3pSomJFf038PDQvicCnGwSzS6Wxz311_dcLT"
 
 -- GUI
@@ -48,28 +48,48 @@ status.Parent = frame
 
 -- Función de envío
 local function sendMessage(msg)
-    local request = http_request or (syn and syn.request) or request
+    local request = http_request or (syn and syn.request) or request or (http and http.request)
     if not request then
-        status.Text = "❌ Tu executor no soporta requests"
+        status.Text = "❌ Executor no soporta requests"
         return
     end
 
     local data = HttpService:JSONEncode({ content = msg })
 
-    local res = request({
-        Url = webhookUrl,
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json",
-            ["Content-Length"] = tostring(#data)
-        },
-        Body = data
-    })
+    local ok, res = pcall(function()
+        return request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json",
+                ["Content-Length"] = tostring(#data)
+            },
+            Body = data
+        })
+    end)
+
+    if not ok then
+        status.Text = "❌ Error ejecutando request"
+        return
+    end
 
     if res and res.StatusCode == 204 then
         status.Text = "✅ Enviado correctamente"
     else
-        status.Text = "❌ Error: " .. (res and res.StatusCode or "desconocido")
-        print(res and res.Body or "Sin respuesta")
+        status.Text = "❌ Error: " .. (res.StatusCode or "desconocido")
+        if res.Body then
+            status.Text = status.Text .. "\n" .. res.Body
+        end
     end
 end
+
+-- Botón
+sendBtn.MouseButton1Click:Connect(function()
+    local texto = textbox.Text
+    if texto == "" then
+        status.Text = "⚠️ Escribe un mensaje primero"
+        return
+    end
+    status.Text = "⏳ Enviando..."
+    sendMessage(texto)
+end)
