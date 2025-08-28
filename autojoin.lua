@@ -1,8 +1,8 @@
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 
--- 🔹 Pega aquí tu webhook completo de Discord
-local webhookUrl = "https://discord.com/api/webhooks/1410719582418895029/0N7OAYVMDhORyBnDu1fVthIqAPtV5DdS3pSomJFf038PDQvicCnGwSzS6Wxz311_dcLT"
+-- 🔹 Cambia por tu webhook de Discord
+local webhookUrl = "https://discord.com/api/webhooks/XXXXXXXX/XXXXXXXX"
 
 -- GUI
 local screenGui = Instance.new("ScreenGui", CoreGui)
@@ -42,24 +42,29 @@ status.BackgroundTransparency = 1
 status.TextColor3 = Color3.fromRGB(220,220,220)
 status.Text = "Estado: esperando..."
 
--- 🔹 Función de envío para executores
-local function sendMessage(msg)
-    local json = HttpService:JSONEncode({content = msg})
-    local request = (syn and syn.request) or (http and http.request) or http_request
+-- 🔹 Función que detecta la API que soporta el executor
+local function getRequest()
+    return (syn and syn.request) or (http and http.request) or request or http_request
+end
 
-    if not request then
-        status.Text = "Executor no soporta requests ❌"
+-- 🔹 Enviar mensaje al webhook
+local function sendMessage(msg)
+    local req = getRequest()
+    if not req then
+        status.Text = "❌ Tu executor no soporta requests HTTP"
         return
     end
 
+    local body = HttpService:JSONEncode({ content = msg })
+
     local ok, res = pcall(function()
-        return request({
+        return req({
             Url = webhookUrl,
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
             },
-            Body = json
+            Body = body
         })
     end)
 
@@ -77,12 +82,13 @@ local function sendMessage(msg)
     end
 end
 
--- 🔹 Botón
+-- Botón
 sendBtn.MouseButton1Click:Connect(function()
     local texto = textbox.Text
     if texto == "" then
-        status.Text = "Escribe un mensaje primero"
+        status.Text = "⚠️ Escribe un mensaje primero"
         return
     end
+    status.Text = "⏳ Enviando..."
     sendMessage(texto)
 end)
