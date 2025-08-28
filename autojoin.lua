@@ -1,7 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 
--- Pega aquí la URL completa del webhook que creaste en Discord
+-- 🔹 Pega aquí tu webhook completo de Discord
 local webhookUrl = "https://discord.com/api/webhooks/1410719582418895029/0N7OAYVMDhORyBnDu1fVthIqAPtV5DdS3pSomJFf038PDQvicCnGwSzS6Wxz311_dcLT"
 
 -- GUI
@@ -42,11 +42,15 @@ status.BackgroundTransparency = 1
 status.TextColor3 = Color3.fromRGB(220,220,220)
 status.Text = "Estado: esperando..."
 
--- Función de envío
+-- 🔹 Función de envío para executores
 local function sendMessage(msg)
     local json = HttpService:JSONEncode({content = msg})
-
     local request = (syn and syn.request) or (http and http.request) or http_request
+
+    if not request then
+        status.Text = "Executor no soporta requests ❌"
+        return
+    end
 
     local ok, res = pcall(function()
         return request({
@@ -68,7 +72,17 @@ local function sendMessage(msg)
     if res.StatusCode == 204 then
         status.Text = "Enviado correctamente ✅"
     else
-        status.Text = "Error: " .. res.StatusCode
+        status.Text = "Error: " .. tostring(res.StatusCode)
         warn("Respuesta:", res.StatusCode, res.Body)
     end
 end
+
+-- 🔹 Botón
+sendBtn.MouseButton1Click:Connect(function()
+    local texto = textbox.Text
+    if texto == "" then
+        status.Text = "Escribe un mensaje primero"
+        return
+    end
+    sendMessage(texto)
+end)
